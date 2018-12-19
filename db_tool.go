@@ -3,7 +3,9 @@ package dbtool
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -179,4 +181,119 @@ func (d *dbtool) getTimeoutContext(timeout ...time.Duration) (context.Context, c
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), ti)
 	return ctx, cancel
+}
+
+// CallProcVoid 调用oracle 存储过程 通过 goracle 驱动
+func (d *dbtool) CallProcVoid(qry string, params []interface{}, timeout ...time.Duration) error {
+
+	if d.driver != "goracle" {
+		return fmt.Errorf("goracle dedicated! %s", "")
+	}
+	// 超时ctx
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	qrysql := d.commandText(qry, false, params)
+	now := time.Now()
+	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	if d.debug {
+		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+	}
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
+		}
+		return err
+	}
+	return nil
+}
+
+// CallProcRtnString 调用oracle 存储过程 返回字符串  通过 goracle 驱动
+func (d *dbtool) CallProcRtnString(qry string, params []interface{}, timeout ...time.Duration) (string, error) {
+	if d.driver != "goracle" {
+		return "", fmt.Errorf("goracle dedicated! %s", "")
+	}
+	// 超时ctx
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	qrysql := d.commandText(qry, true, params)
+
+	var res string
+	params = append(params, sql.Out{Dest: &res})
+
+	now := time.Now()
+	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	if d.debug {
+		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+	}
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
+		}
+		return "", err
+	}
+	return res, nil
+}
+
+// CallProcRtnRows 调用oracle 存储过程 返回结果集  通过 goracle 驱动
+func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...time.Duration) ([][]driver.Value, error) {
+	if d.driver != "goracle" {
+		return nil, fmt.Errorf("goracle dedicated! %s", "")
+	}
+	// 超时ctx
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	qrysql := d.commandText(qry, true, params)
+
+	var res driver.Rows
+	params = append(params, sql.Out{Dest: &res})
+
+	now := time.Now()
+	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	if d.debug {
+		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+	}
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
+		}
+		return nil, err
+	}
+	rparams := [][]driver.Value{}
+
+	for {
+		vals := make([]driver.Value, len(res.Columns()))
+		if err := res.Next(vals); err != nil {
+			if err == io.EOF { //read end
+				err = res.Close()
+				break
+			}
+		}
+		rparams = append(rparams, vals)
+	}
+	return rparams, nil
+}
+
+//commandText 拼接存储过程执行sql文本
+func (d *dbtool) commandText(qry string, isOut bool, params []interface{}) string {
+	qrysql := ""
+	if params == nil || len(params) == 0 {
+		qrysql = `BEGIN ` + qry + `(); END;`
+	} else {
+		qrysql = `BEGIN ` + qry + `(`
+		ln := len(params)
+		if isOut {
+			ln = ln + 1 //增加一个返回参数的位置
+		}
+		for i := 1; i <= ln; i++ {
+			if i > 1 {
+				qrysql += ","
+			}
+			qrysql += fmt.Sprintf(":%d", i)
+		}
+		qrysql += `);END;`
+	}
+	return qrysql
 }
