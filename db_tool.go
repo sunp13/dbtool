@@ -270,3 +270,26 @@ func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...ti
 	}
 	return rparams, nil
 }
+
+//CallProc 调用存储过程 返回对应的结果集，需要注意返回数据中游标的处理，处理完成后需要关闭
+func (d *dbtool) CallProc(qry string, params []interface{}, timeout ...time.Duration) error {
+	if d.driver != "goracle" {
+		return fmt.Errorf("goracle dedicated! %s", "")
+	}
+	// 超时ctx
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	now := time.Now()
+	_, err := d.ds.ExecContext(ctx, qry, params...)
+	if d.debug {
+		DLog.queryLog(d.alias, "Exec", qry, now, err, ctx.Err(), params...)
+	}
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
+		}
+		return err
+	}
+	return nil
+}
