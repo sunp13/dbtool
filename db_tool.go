@@ -193,11 +193,10 @@ func (d *dbtool) CallProcVoid(qry string, params []interface{}, timeout ...time.
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
-	qrysql := d.commandText(qry, false, params)
 	now := time.Now()
-	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	_, err := d.ds.ExecContext(ctx, qry, params...)
 	if d.debug {
-		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+		DLog.queryLog(d.alias, "Exec", qry, now, err, ctx.Err(), params...)
 	}
 	if err != nil {
 		if ctx.Err() != nil {
@@ -217,15 +216,13 @@ func (d *dbtool) CallProcRtnString(qry string, params []interface{}, timeout ...
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
-	qrysql := d.commandText(qry, true, params)
-
 	var res string
 	params = append(params, sql.Out{Dest: &res})
 
 	now := time.Now()
-	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	_, err := d.ds.ExecContext(ctx, qry, params...)
 	if d.debug {
-		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+		DLog.queryLog(d.alias, "Exec", qry, now, err, ctx.Err(), params...)
 	}
 	if err != nil {
 		if ctx.Err() != nil {
@@ -245,15 +242,13 @@ func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...ti
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
-	qrysql := d.commandText(qry, true, params)
-
 	var res driver.Rows
 	params = append(params, sql.Out{Dest: &res})
 
 	now := time.Now()
-	_, err := d.ds.ExecContext(ctx, qrysql, params...)
+	_, err := d.ds.ExecContext(ctx, qry, params...)
 	if d.debug {
-		DLog.queryLog(d.alias, "Exec", qrysql, now, err, ctx.Err(), params...)
+		DLog.queryLog(d.alias, "Exec", qry, now, err, ctx.Err(), params...)
 	}
 	if err != nil {
 		if ctx.Err() != nil {
@@ -274,26 +269,4 @@ func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...ti
 		rparams = append(rparams, vals)
 	}
 	return rparams, nil
-}
-
-//commandText 拼接存储过程执行sql文本
-func (d *dbtool) commandText(qry string, isOut bool, params []interface{}) string {
-	qrysql := ""
-	if params == nil || len(params) == 0 {
-		qrysql = `BEGIN ` + qry + `(); END;`
-	} else {
-		qrysql = `BEGIN ` + qry + `(`
-		ln := len(params)
-		if isOut {
-			ln = ln + 1 //增加一个返回参数的位置
-		}
-		for i := 1; i <= ln; i++ {
-			if i > 1 {
-				qrysql += ","
-			}
-			qrysql += fmt.Sprintf(":%d", i)
-		}
-		qrysql += `);END;`
-	}
-	return qrysql
 }
