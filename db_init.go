@@ -71,7 +71,7 @@ func resolveConf(data []byte) error {
 	var ds []DsProperty
 	err := yaml.Unmarshal(data, &ds)
 	if err != nil {
-		DLog.Println("conf error:", err.Error())
+		DLog.Println("conf parse error:", err.Error())
 		return err
 	}
 

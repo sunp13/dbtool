@@ -35,6 +35,8 @@ func rowsToMap(rs *sql.Rows) ([]map[string]interface{}, error) {
 					}
 					return val.(time.Time).Format("2006-01-02 15:04:05")
 				}()
+			case []uint8:
+				entry[col] = string(val.([]uint8))
 			default:
 				entry[col] = val
 			}
