@@ -16,7 +16,7 @@ import (
 // db.QueryRow()调用完毕后会将连接传递给sql.Row类型，当.Scan()方法调用之后把连接释放回到连接池。
 // db.Begin() 调用完毕后将连接传递给sql.Tx类型对象，当.Commit()或.Rollback()方法调用后释放连接。
 
-type dbtool struct {
+type mydb struct {
 	alias   string // 数据库别名
 	driver  string // goracle/mysql
 	debug   bool   // true/false
@@ -25,12 +25,12 @@ type dbtool struct {
 }
 
 // SetTimeout 设置默认超时时间
-func (d *dbtool) SetTimeout(timeout time.Duration) {
+func (d *mydb) SetTimeout(timeout time.Duration) {
 	d.timeout = timeout
 }
 
 // QuerySQL 普通查询 (oracle mysql 通用)
-func (d *dbtool) QuerySQL(sql string, params []interface{}, timeout ...time.Duration) ([]map[string]interface{}, error) {
+func (d *mydb) QuerySQL(sql string, params []interface{}, timeout ...time.Duration) ([]map[string]interface{}, error) {
 	// 超时ctx
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
@@ -40,6 +40,7 @@ func (d *dbtool) QuerySQL(sql string, params []interface{}, timeout ...time.Dura
 	if err != nil {
 		return nil, err
 	}
+	// 释放连接
 	defer rs.Close()
 
 	data, err := rowsToMap(rs)
@@ -57,7 +58,7 @@ func (d *dbtool) QuerySQL(sql string, params []interface{}, timeout ...time.Dura
 }
 
 // UpdateSQL 普通更新 返回影响行数(oracle mysql 通用)
-func (d *dbtool) UpdateSQL(sql string, params []interface{}, timeout ...time.Duration) (int64, error) {
+func (d *mydb) UpdateSQL(sql string, params []interface{}, timeout ...time.Duration) (int64, error) {
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
@@ -80,7 +81,7 @@ func (d *dbtool) UpdateSQL(sql string, params []interface{}, timeout ...time.Dur
 }
 
 // UpdateSQLMulti 同sql 操作多次 (oracle mysql 通用)
-func (d *dbtool) UpdateSQLMulti(sql string, params [][]interface{}, timeout ...time.Duration) (int64, error) {
+func (d *mydb) UpdateSQLMulti(sql string, params [][]interface{}, timeout ...time.Duration) (int64, error) {
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
@@ -121,7 +122,7 @@ func (d *dbtool) UpdateSQLMulti(sql string, params [][]interface{}, timeout ...t
 }
 
 // AddSQL 添加数据返回主键id  (oracle 不能用)
-func (d *dbtool) AddSQL(sql string, params []interface{}, timeout ...time.Duration) (int64, error) {
+func (d *mydb) AddSQL(sql string, params []interface{}, timeout ...time.Duration) (int64, error) {
 	if d.driver == "goracle" {
 		return 0, fmt.Errorf("Not support %s", d.driver)
 	}
@@ -146,7 +147,7 @@ func (d *dbtool) AddSQL(sql string, params []interface{}, timeout ...time.Durati
 }
 
 // AddSQLOra 添加数据返回主键ID (GORACLE 专用,需要填写主键字段名)
-func (d *dbtool) AddSQLOra(s string, params []interface{}, pkName string, timeout ...time.Duration) (int64, error) {
+func (d *mydb) AddSQLOra(s string, params []interface{}, pkName string, timeout ...time.Duration) (int64, error) {
 	if d.driver != "goracle" {
 		return 0, fmt.Errorf("goracle dedicated! %s", "")
 	}
@@ -174,7 +175,7 @@ func (d *dbtool) AddSQLOra(s string, params []interface{}, pkName string, timeou
 }
 
 // 获取timeout context
-func (d *dbtool) getTimeoutContext(timeout ...time.Duration) (context.Context, context.CancelFunc) {
+func (d *mydb) getTimeoutContext(timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	ti := d.timeout
 	if len(timeout) > 0 {
 		ti = timeout[0]
@@ -184,7 +185,7 @@ func (d *dbtool) getTimeoutContext(timeout ...time.Duration) (context.Context, c
 }
 
 // CallProcVoid 调用oracle 存储过程 通过 goracle 驱动
-func (d *dbtool) CallProcVoid(qry string, params []interface{}, timeout ...time.Duration) error {
+func (d *mydb) CallProcVoid(qry string, params []interface{}, timeout ...time.Duration) error {
 
 	if d.driver != "goracle" {
 		return fmt.Errorf("goracle dedicated! %s", "")
@@ -208,7 +209,7 @@ func (d *dbtool) CallProcVoid(qry string, params []interface{}, timeout ...time.
 }
 
 // CallProcRtnString 调用oracle 存储过程 返回字符串  通过 goracle 驱动
-func (d *dbtool) CallProcRtnString(qry string, params []interface{}, timeout ...time.Duration) (string, error) {
+func (d *mydb) CallProcRtnString(qry string, params []interface{}, timeout ...time.Duration) (string, error) {
 	if d.driver != "goracle" {
 		return "", fmt.Errorf("goracle dedicated! %s", "")
 	}
@@ -234,7 +235,7 @@ func (d *dbtool) CallProcRtnString(qry string, params []interface{}, timeout ...
 }
 
 // CallProcRtnRows 调用oracle 存储过程 返回结果集  通过 goracle 驱动
-func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...time.Duration) ([][]driver.Value, error) {
+func (d *mydb) CallProcRtnRows(qry string, params []interface{}, timeout ...time.Duration) ([][]driver.Value, error) {
 	if d.driver != "goracle" {
 		return nil, fmt.Errorf("goracle dedicated! %s", "")
 	}
@@ -272,7 +273,7 @@ func (d *dbtool) CallProcRtnRows(qry string, params []interface{}, timeout ...ti
 }
 
 //CallProc 调用存储过程 返回对应的结果集，需要注意返回数据中游标的处理，处理完成后需要关闭
-func (d *dbtool) CallProc(qry string, params []interface{}, timeout ...time.Duration) error {
+func (d *mydb) CallProc(qry string, params []interface{}, timeout ...time.Duration) error {
 	if d.driver != "goracle" {
 		return fmt.Errorf("goracle dedicated! %s", "")
 	}

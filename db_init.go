@@ -12,9 +12,9 @@ import (
 
 var (
 	// D tool default
-	D *dbtool
+	D *mydb
 	// DS tool map
-	DS map[string]*dbtool
+	DS map[string]*mydb
 	// DLog logger
 	DLog = NewLogger(os.Stdout)
 )
@@ -32,10 +32,10 @@ type DsProperty struct {
 func init() {
 	// 环境变量for oracle
 	os.Setenv("NLS_LANG", "SIMPLIFIED CHINESE_CHINA.UTF8")
-	DS = make(map[string]*dbtool, 0)
+	DS = make(map[string]*mydb, 0)
 }
 
-func newDBTool(p *DsProperty) *dbtool {
+func newDBTool(p *DsProperty) *mydb {
 	ds, err := sql.Open(p.DriverName, p.URL)
 	if err != nil {
 		DLog.Println("open err", err.Error())
@@ -44,7 +44,7 @@ func newDBTool(p *DsProperty) *dbtool {
 	ds.SetMaxIdleConns(p.MaxIdle)
 	ds.SetMaxOpenConns(p.MaxConn)
 	ds.SetConnMaxLifetime(30 * 60 * time.Second) // 30分钟以后的链接不复用,直接关掉,拿新的
-	return &dbtool{
+	return &mydb{
 		alias:   p.Alias,
 		driver:  p.DriverName,
 		debug:   p.Debug,
