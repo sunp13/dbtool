@@ -42,7 +42,42 @@ func (d *mydb) QuerySQL(sql string, params []interface{}, timeout ...time.Durati
 	}
 	// 释放连接
 	defer rs.Close()
+	data, err := rowsToMap(rs)
+	if d.debug {
+		DLog.queryLog(d.alias, "Query", sql, now, err, ctx.Err(), params...)
+	}
 
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
+		}
+		return nil, err
+	}
+	return data, nil
+}
+
+// QuerySQL 普通DBLink查询 (oracle mysql 通用)
+// 由于Oracle 通过DBlink查询会产生事务, 并不会主动释放, 会造成数据库连接数占用过高问题, 这里手动释放一下
+func (d *mydb) QuerySQLWithDBLink(sql string, params []interface{}, timeout ...time.Duration) ([]map[string]interface{}, error) {
+	// 超时ctx
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	now := time.Now()
+	// 开启事务
+	tx, err := d.ds.Begin()
+	if err != nil {
+		return nil, err
+	}
+	// 主动释放事务
+	defer tx.Rollback()
+
+	rs, err := tx.QueryContext(ctx, sql, params...)
+	if err != nil {
+		return nil, err
+	}
+	// 释放连接
+	defer rs.Close()
 	data, err := rowsToMap(rs)
 	if d.debug {
 		DLog.queryLog(d.alias, "Query", sql, now, err, ctx.Err(), params...)
@@ -81,17 +116,20 @@ func (d *mydb) UpdateSQL(sql string, params []interface{}, timeout ...time.Durat
 }
 
 // UpdateSQLMulti 同sql 操作多次 (oracle mysql 通用)
-func (d *mydb) UpdateSQLMulti(sql string, params [][]interface{}, timeout ...time.Duration) (int64, error) {
+// timeout 是 事务整个超时时间
+func (d *mydb) UpdateSQLMulti(s string, params [][]interface{}, timeout ...time.Duration) (int64, error) {
 	ctx, cancel := d.getTimeoutContext(timeout...)
 	defer cancel()
 
+	// 开启事务
 	tx, err := d.ds.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare(sql)
+	// prepare
+	stmt, err := tx.Prepare(s)
 	if err != nil {
 		return 0, err
 	}
@@ -102,14 +140,11 @@ func (d *mydb) UpdateSQLMulti(sql string, params [][]interface{}, timeout ...tim
 	for _, v := range params {
 		_, err := stmt.Exec(v...)
 		if d.debug {
-			DLog.queryLog(d.alias, "Exec", sql, now, err, ctx.Err(), v...)
+			DLog.queryLog(d.alias, "Exec", s, now, err, nil, v...)
 		}
 		if err != nil {
 			// 在tx释放连接前关闭statment 防止stmt泄露
 			stmt.Close()
-			if ctx.Err() != nil {
-				err = fmt.Errorf("%s ( %s )", err.Error(), ctx.Err().Error())
-			}
 			// 这里返回就会tx.Rollback()
 			return 0, err
 		}

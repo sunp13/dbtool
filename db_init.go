@@ -37,6 +37,7 @@ func init() {
 
 func newDBTool(p *DsProperty) *mydb {
 	ds, err := sql.Open(p.DriverName, p.URL)
+
 	if err != nil {
 		DLog.Println("open err", err.Error())
 		return nil
