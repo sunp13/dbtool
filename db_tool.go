@@ -143,9 +143,6 @@ func (d *mydb) UpdateSQLMulti(s string, params [][]interface{}, timeout ...time.
 			DLog.queryLog(d.alias, "Exec", s, now, err, nil, v...)
 		}
 		if err != nil {
-			// 在tx释放连接前关闭statment 防止stmt泄露
-			stmt.Close()
-			// 这里返回就会tx.Rollback()
 			return 0, err
 		}
 		succ++
