@@ -37,6 +37,8 @@ func rowsToMap(rs *sql.Rows) ([]map[string]interface{}, error) {
 				}()
 			case []uint8:
 				entry[col] = string(val.([]uint8))
+                        case int64:
+				entry[col] = fmt.Sprintf("%d",val.(int64))
 			default:
 				entry[col] = val
 			}
