@@ -3,6 +3,7 @@ package dbtool
 import (
 	"database/sql"
 	"time"
+	"fmt"
 )
 
 // rowsToMap func
