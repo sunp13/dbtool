@@ -1,4 +1,4 @@
-module dbtool
+module github.com/sunp13/dbtool
 
 go 1.17
 
