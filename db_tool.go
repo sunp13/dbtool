@@ -153,10 +153,55 @@ func (d *mydb) UpdateSQLMulti(s string, params [][]interface{}, timeout ...time.
 	return succ, nil
 }
 
+// UpdateSQLMultiErrRollback
+// 批量更新,异常回滚
+func (d *mydb) UpdateSQLMultiErrRollback(s string, params [][]interface{}, timeout ...time.Duration) (int64, error) {
+	ctx, cancel := d.getTimeoutContext(timeout...)
+	defer cancel()
+
+	// 开启事务
+	tx, err := d.ds.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// prepare
+	stmt, err := tx.Prepare(s)
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	now := time.Now()
+	var succ int64
+
+	for _, v := range params {
+		_, err := stmt.Exec(v...)
+		if d.debug {
+			DLog.queryLog(d.alias, "Exec", s, now, err, nil, v...)
+		}
+		if err != nil {
+			break
+		}
+		succ++
+	}
+
+	// 异常回滚
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// 正常提交
+	tx.Commit()
+	return succ, nil
+}
+
 // AddSQL 添加数据返回主键id  (oracle 不能用)
 func (d *mydb) AddSQL(sql string, params []interface{}, timeout ...time.Duration) (int64, error) {
 	if d.driver == "goracle" {
-		return 0, fmt.Errorf("Not support %s", d.driver)
+		return 0, fmt.Errorf("not support %s", d.driver)
 	}
 
 	ctx, cancel := d.getTimeoutContext(timeout...)
