@@ -2,8 +2,6 @@ package dbtool
 
 import (
 	"database/sql"
-	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -15,8 +13,6 @@ var (
 	D *mydb
 	// DS tool map
 	DS map[string]*mydb
-	// DLog logger
-	DLog = NewLogger(os.Stdout)
 )
 
 // DsProperty conf 文件实体
@@ -35,12 +31,10 @@ func init() {
 	DS = make(map[string]*mydb, 0)
 }
 
-func newDBTool(p *DsProperty) *mydb {
+func newDBTool(p *DsProperty) (*mydb, error) {
 	ds, err := sql.Open(p.DriverName, p.URL)
-
 	if err != nil {
-		DLog.Println("open err", err.Error())
-		return nil
+		return nil, err
 	}
 	ds.SetMaxIdleConns(p.MaxIdle)
 	ds.SetMaxOpenConns(p.MaxConn)
@@ -51,39 +45,37 @@ func newDBTool(p *DsProperty) *mydb {
 		debug:   p.Debug,
 		ds:      ds,
 		timeout: 30 * time.Second, // 默认所有请求30秒超时
-	}
-}
-
-// SetLogger setNewLogger
-func SetLogger(out io.Writer) {
-	DLog = NewLogger(os.Stdout)
+	}, nil
 }
 
 // Init 加载指定数据库配置文件
 func Init(filePath string) error {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
-	return resolveConf(data)
+	if err := resolveConf(data); err != nil {
+		return err
+	}
+	// 初始化日志-默认使用os.Stdout
+	SetLogger(nil)
+	return nil
 }
 
 func resolveConf(data []byte) error {
 	var ds []DsProperty
 	err := yaml.Unmarshal(data, &ds)
 	if err != nil {
-		DLog.Println("conf parse error:", err.Error())
 		return err
 	}
-
 	for _, v := range ds {
-		u := newDBTool(&v)
-		err := u.ds.Ping()
+		u, err := newDBTool(&v)
 		if err != nil {
-			DLog.Printf("%s Ping failed!\n", v.Alias)
-			continue
+			return err
 		}
-		DLog.Printf("%s Ping succ!", v.Alias)
+		if err = u.ds.Ping(); err != nil {
+			return err
+		}
 		if v.Alias == "default" {
 			D = u
 			continue

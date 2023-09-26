@@ -2,8 +2,8 @@ package dbtool
 
 import (
 	"database/sql"
-	"time"
 	"fmt"
+	"time"
 )
 
 // rowsToMap func
@@ -27,19 +27,18 @@ func rowsToMap(rs *sql.Rows) ([]map[string]interface{}, error) {
 		}
 		entry := make(map[string]interface{})
 		for i, col := range columns {
-			val := values[i]
-			switch val.(type) {
+			switch val := values[i].(type) {
 			case time.Time:
 				entry[col] = func() interface{} {
-					if val.(time.Time).IsZero() {
+					if val.IsZero() {
 						return nil
 					}
-					return val.(time.Time).Format("2006-01-02 15:04:05")
+					return val.Format("2006-01-02 15:04:05")
 				}()
 			case []uint8:
-				entry[col] = string(val.([]uint8))
-                        case int64:
-				entry[col] = fmt.Sprintf("%d",val.(int64))
+				entry[col] = string(val)
+			case int64:
+				entry[col] = fmt.Sprintf("%d", val)
 			default:
 				entry[col] = val
 			}

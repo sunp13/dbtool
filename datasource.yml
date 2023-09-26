@@ -2,6 +2,7 @@
 # 1.必须要有alias = default 的默认数据库
 # 2.对应驱动 
 #        goracle=>gopkg.in/goracle.v2
+#        godror=>github.com/godror/godror
 #        mysql=>github.com/go-sql-driver/mysql
 
 -
