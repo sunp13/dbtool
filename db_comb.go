@@ -182,7 +182,32 @@ func (d *Comb) FilterBetween(fkeyBegin, fkeyEnd string, fval string) *Comb {
 		fvalF64, _ := strconv.ParseFloat(fval, 64)
 
 		if (fvalF64 >= beginF64) && (fvalF64 <= endF64) {
-			fmt.Println(beginF64, endF64, fvalF64)
+			tempData = append(tempData, v)
+		}
+	}
+	return &Comb{
+		Data:   tempData,
+		Filted: true,
+	}
+}
+
+// 比对一个字段中的最小值,最大值, 逗号分隔的字段
+func (d *Comb) FilterRangeSplit(rangeKey string, fval string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	for _, v := range d.Data {
+		if _, ok := v[rangeKey]; !ok {
+			continue
+		}
+		fieldValue := fmt.Sprintf("%v", v[rangeKey])
+		fieldSpl := strings.Split(fieldValue, ",")
+		if len(fieldSpl) != 2 {
+			// 如果字段不是2段
+			continue
+		}
+		beginF64, _ := strconv.ParseFloat(fieldSpl[0], 64)
+		endF64, _ := strconv.ParseFloat(fieldSpl[1], 64)
+		fvalF64, _ := strconv.ParseFloat(fval, 64)
+		if fvalF64 >= beginF64 && fvalF64 <= endF64 {
 			tempData = append(tempData, v)
 		}
 	}
