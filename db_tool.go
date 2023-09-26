@@ -38,7 +38,7 @@ func (d *mydb) QuerySQL(s string, params []interface{}, timeout ...time.Duration
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -63,7 +63,7 @@ func (d *mydb) QuerySQLWithDBLink(s string, params []interface{}, timeout ...tim
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -96,7 +96,7 @@ func (d *mydb) UpdateSQL(s string, params []interface{}, timeout ...time.Duratio
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -119,7 +119,7 @@ func (d *mydb) UpdateSQLMulti(s string, params [][]interface{}, timeout ...time.
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -161,7 +161,7 @@ func (d *mydb) UpdateSQLMultiErrRollback(s string, params [][]interface{}, timeo
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -206,7 +206,7 @@ func (d *mydb) AddSQL(s string, params []interface{}, timeout ...time.Duration) 
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
@@ -232,7 +232,7 @@ func (d *mydb) AddSQLOra(s string, params []interface{}, pkName string, timeout 
 	defer func() {
 		if d.debug {
 			pByte, _ := JSON.Marshal(params)
-			L.Debug().Str("alias", d.alias).Str("err", err.Error()).Str("SQL", s).Bytes("PARAMS", pByte).Send()
+			L.Err(err).Str("alias", d.alias).Str("SQL", s).Bytes("PARAMS", pByte).Send()
 		}
 	}()
 
