@@ -339,6 +339,17 @@ func (d *Comb) FilterJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	}
 }
 
+// 合并数据-> 要求两边数据字段一致(不一致也没事儿)
+func (d *Comb) UnionAll(comp *Comb) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	tempData = append(tempData, d.Data...)
+	tempData = append(tempData, comp.Data...)
+	return &Comb{
+		Data:   tempData,
+		Filted: d.Filted,
+	}
+}
+
 // 自动组合数据, // 如果comb2 isFilted, innerJoin, 否则 leftjoin
 func (d *Comb) CombAutoJoin(comb2 *Comb, fleft, fright string) *Comb {
 	if comb2.Filted {
