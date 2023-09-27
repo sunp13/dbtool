@@ -302,6 +302,25 @@ func (d *Comb) CountSum(newKey string, sumKey ...string) *Comb {
 	}
 }
 
+// 关联字段
+func (d *Comb) ConcatSeparator(separator, newKey string, fields ...string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	for i, v := range d.Data {
+		newValue := make([]string, 0)
+		for _, sField := range fields {
+			if sval, ok := v[sField]; ok {
+				newValue = append(newValue, fmt.Sprintf("%v", sval))
+			}
+		}
+		d.Data[i][newKey] = strings.Join(newValue, separator)
+		tempData = append(tempData, v)
+	}
+	return &Comb{
+		Data:   tempData,
+		Filted: d.Filted,
+	}
+}
+
 // 数据关联 ///////////////////////////////////////
 // 左关联
 func (d *Comb) LeftJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
