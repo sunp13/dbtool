@@ -217,7 +217,7 @@ func (d *Comb) FilterRangeSplit(rangeKey string, fval string) *Comb {
 	}
 }
 
-// //////////////////////////////////
+// 数据操作 //////////////////////////////////
 // 按字段排重
 func (d *Comb) UniqSort(fkey string) *Comb {
 	sortMap := make(map[string]map[string]interface{}, 0)
@@ -232,11 +232,53 @@ func (d *Comb) UniqSort(fkey string) *Comb {
 	}
 	return &Comb{
 		Data:   tempData,
-		Filted: true,
+		Filted: d.Filted,
 	}
 }
 
-// ///////////////////////////////////////
+// 按split统计个数 新字段名=老字段名前面+下划线,后面加scount
+func (d *Comb) CountSplit(fkey string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	for i, v := range d.Data {
+		if _, ok := v[fkey]; !ok {
+			continue
+		}
+		fval := fmt.Sprintf("%v", v[fkey])
+		spl := strings.Split(fval, ",")
+		d.Data[i][fmt.Sprintf("_%s_scount", fkey)] = len(spl)
+		tempData = append(tempData, v)
+	}
+	return &Comb{
+		Data:   tempData,
+		Filted: d.Filted,
+	}
+}
+
+// 按range统计个数 新字段=老子段名前面+下划线,后面加rcount
+func (d *Comb) CountRange(fkey string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	for i, v := range d.Data {
+		if _, ok := v[fkey]; !ok {
+			continue
+		}
+		fval := fmt.Sprintf("%v", v[fkey])
+		spl := strings.Split(fval, ",")
+		beginI64, _ := strconv.ParseInt(spl[0], 10, 64)
+		endInt64, _ := strconv.ParseInt(spl[1], 10, 64)
+		var total int64
+		if endInt64 > 0 {
+			total = endInt64 - beginI64 + 1
+		}
+		d.Data[i][fmt.Sprintf("_%s_rcount", fkey)] = total
+		tempData = append(tempData, v)
+	}
+	return &Comb{
+		Data:   tempData,
+		Filted: d.Filted,
+	}
+}
+
+// 数据关联 ///////////////////////////////////////
 // 左关联
 func (d *Comb) LeftJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	// 如果要组合的数据为空
