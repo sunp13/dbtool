@@ -263,12 +263,16 @@ func (d *Comb) CountRange(fkey string) *Comb {
 		}
 		fval := fmt.Sprintf("%v", v[fkey])
 		spl := strings.Split(fval, ",")
-		beginI64, _ := strconv.ParseInt(spl[0], 10, 64)
-		endInt64, _ := strconv.ParseInt(spl[1], 10, 64)
 		var total int64
-		if endInt64 > 0 {
-			total = endInt64 - beginI64 + 1
+		for _, vv := range spl {
+			spr := strings.Split(vv, "-")
+			beginI64, _ := strconv.ParseInt(spr[0], 10, 64)
+			endInt64, _ := strconv.ParseInt(spr[1], 10, 64)
+			if endInt64 > 0 {
+				total += (endInt64 - beginI64) + 1
+			}
 		}
+
 		d.Data[i][fmt.Sprintf("_%s_rcount", fkey)] = total
 		tempData = append(tempData, v)
 	}
