@@ -237,7 +237,7 @@ func (d *Comb) UniqSort(fkey string) *Comb {
 }
 
 // 按split统计个数 新字段名=老字段名前面+下划线,后面加scount
-func (d *Comb) CountSplit(fkey string) *Comb {
+func (d *Comb) CountSplit(fkey, newKey string) *Comb {
 	tempData := make([]map[string]interface{}, 0)
 	for i, v := range d.Data {
 		if _, ok := v[fkey]; !ok {
@@ -245,7 +245,7 @@ func (d *Comb) CountSplit(fkey string) *Comb {
 		}
 		fval := fmt.Sprintf("%v", v[fkey])
 		spl := strings.Split(fval, ",")
-		d.Data[i][fmt.Sprintf("_%s_scount", fkey)] = len(spl)
+		d.Data[i][newKey] = len(spl)
 		tempData = append(tempData, v)
 	}
 	return &Comb{
@@ -255,7 +255,7 @@ func (d *Comb) CountSplit(fkey string) *Comb {
 }
 
 // 按range统计个数 新字段=老子段名前面+下划线,后面加rcount
-func (d *Comb) CountRange(fkey string) *Comb {
+func (d *Comb) CountRange(fkey, newKey string) *Comb {
 	tempData := make([]map[string]interface{}, 0)
 	for i, v := range d.Data {
 		if _, ok := v[fkey]; !ok {
@@ -273,7 +273,7 @@ func (d *Comb) CountRange(fkey string) *Comb {
 			}
 		}
 
-		d.Data[i][fmt.Sprintf("_%s_rcount", fkey)] = total
+		d.Data[i][newKey] = total
 		tempData = append(tempData, v)
 	}
 	return &Comb{
