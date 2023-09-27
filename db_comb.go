@@ -282,6 +282,26 @@ func (d *Comb) CountRange(fkey string) *Comb {
 	}
 }
 
+// 多个字段相加计算结果
+func (d *Comb) CountSum(newKey string, sumKey ...string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	for i, v := range d.Data {
+		var sumRes float64
+		for _, skey := range sumKey {
+			if sval, ok := v[skey]; ok {
+				sF64, _ := strconv.ParseFloat(fmt.Sprintf("%v", sval), 64)
+				sumRes += sF64
+			}
+		}
+		d.Data[i][newKey] = sumRes
+		tempData = append(tempData, v)
+	}
+	return &Comb{
+		Data:   tempData,
+		Filted: d.Filted,
+	}
+}
+
 // 数据关联 ///////////////////////////////////////
 // 左关联
 func (d *Comb) LeftJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
