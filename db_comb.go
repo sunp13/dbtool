@@ -397,6 +397,34 @@ func (d *Comb) InnerJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	}
 }
 
+// 排除连接, 左侧数据中不能有右侧数据同Field数据
+func (d *Comb) ExcludeJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+	if len(comp.Data) == 0 {
+		return d
+	}
+
+	// 先把右侧数据做成MAP
+	tempMap := make(map[string]string, 0)
+	for _, v := range comp.Data {
+		if rVal, ok := v[fieldRight]; ok {
+			tempMap[fmt.Sprintf("%v", rVal)] = ""
+		}
+	}
+
+	// 左侧数据如果等于右侧数据,排除掉
+	for _, v := range d.Data {
+		if lVal, ok := v[fieldLeft]; ok {
+			if _, ook := tempMap[fmt.Sprintf("%v", lVal)]; !ook {
+				tempData = append(tempData, v)
+			}
+		}
+	}
+	return &Comb{
+		Data: tempData,
+	}
+}
+
 // 过滤关联
 func (d *Comb) FilterJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	tempData := make([]map[string]interface{}, 0)
