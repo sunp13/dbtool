@@ -362,6 +362,30 @@ func (d *Comb) LeftJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	return d
 }
 
+// 左关联指定字段
+func (d *Comb) LeftJoinWithFields(comp *Comb, fieldLeft, fieldRight string, fields ...string) *Comb {
+	// 如果要组合的数据为空
+	if len(comp.Data) == 0 {
+		return d
+	}
+	for i, v := range d.Data {
+		d.Data[i]["__"] = "0"
+		v1 := fmt.Sprintf("%s", v[fieldLeft])
+		for _, vv := range comp.Data {
+			if v2, ok := vv[fieldRight]; ok && fmt.Sprintf("%s", v2) == v1 {
+				d.Data[i]["__"] = "1"
+				// 关联字段相同,合并map
+				for f, fv := range vv {
+					if arrayContain(f, fields) {
+						d.Data[i][f] = fv
+					}
+				}
+			}
+		}
+	}
+	return d
+}
+
 // 内关联
 func (d *Comb) InnerJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 	tempData := make([]map[string]interface{}, 0)
@@ -383,6 +407,39 @@ func (d *Comb) InnerJoin(comp *Comb, fieldLeft, fieldRight string) *Comb {
 					if f == fieldRight {
 						continue
 					} else {
+						d.Data[i][f] = fv
+					}
+				}
+			}
+		}
+		if fmt.Sprintf("%s", d.Data[i]["__"]) == "1" {
+			tempData = append(tempData, v)
+		}
+	}
+	return &Comb{
+		Data: tempData,
+	}
+}
+
+// 内关联指定字段
+func (d *Comb) InnerJoinWithFields(comp *Comb, fieldLeft, fieldRight string, fields ...string) *Comb {
+	tempData := make([]map[string]interface{}, 0)
+
+	if len(d.Data) == 0 || len(comp.Data) == 0 {
+		return &Comb{
+			Data: tempData,
+		}
+	}
+
+	for i, v := range d.Data {
+		d.Data[i]["__"] = "0"
+		v1 := fmt.Sprintf("%s", v[fieldLeft])
+		for _, vv := range comp.Data {
+			if v2, ok := vv[fieldRight]; ok && fmt.Sprintf("%s", v2) == v1 {
+				d.Data[i]["__"] = "1"
+				// 关联字段相同,合并map
+				for f, fv := range vv {
+					if arrayContain(f, fields) {
 						d.Data[i][f] = fv
 					}
 				}
