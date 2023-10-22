@@ -528,3 +528,27 @@ func (d *Comb) CombAutoJoin(comb2 *Comb, fleft, fright string) *Comb {
 		return d.LeftJoin(comb2, fleft, fright)
 	}
 }
+
+// 生成tree数据
+// 列表转Tree
+//
+//	export const listToTree = (id, arr, pidName, keyName) => {
+//	    let array = []
+//	    arr.forEach(item => {
+//	        if (item[pidName] === id) {
+//	            item.children = listToTree(item[keyName], arr,pidName,keyName) // 接收子节点
+//	            array.push(item)
+//	        };
+//	    })
+//	    return array
+//	}
+func (d *Comb) ToTree(startID, pidName, keyName string) []map[string]interface{} {
+	tempData := make([]map[string]interface{}, 0)
+	for _, v := range d.Data {
+		if fmt.Sprintf("%v", v[pidName]) == startID {
+			v["children"] = d.ToTree(fmt.Sprintf("%v", v[keyName]), pidName, keyName)
+			tempData = append(tempData, v)
+		}
+	}
+	return tempData
+}
