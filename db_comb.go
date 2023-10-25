@@ -552,3 +552,14 @@ func (d *Comb) ToTree(startID, pidName, keyName string) []map[string]interface{}
 	}
 	return tempData
 }
+
+// ///////all_sum
+func (d *Comb) AllSum(fkey string) (res int64) {
+	for _, v := range d.Data {
+		if fv, ok := v[fkey]; ok {
+			fvalInt64, _ := strconv.ParseInt(fmt.Sprintf("%v", fv), 10, 64)
+			res += fvalInt64
+		}
+	}
+	return
+}
