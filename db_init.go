@@ -62,6 +62,28 @@ func Init(filePath string) error {
 	return nil
 }
 
+// 单独使用mysql
+func InitMySQL(user, pass, host, port, dbname string) error {
+	db := &DsProperty{
+		Alias:      "default",
+		DriverName: "mysql",
+		URL:        user + ":" + pass + "@tcp(" + host + ":" + port + ")/" + dbname,
+		MaxIdle:    5,
+		MaxConn:    10,
+		Debug:      false,
+	}
+	u, err := newDBTool(db)
+	if err != nil {
+		return err
+	}
+
+	if err = u.ds.Ping(); err != nil {
+		return err
+	}
+	D = u
+	return nil
+}
+
 func resolveConf(data []byte) error {
 	var ds []DsProperty
 	err := yaml.Unmarshal(data, &ds)
